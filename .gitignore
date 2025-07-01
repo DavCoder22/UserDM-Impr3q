@@ -1,0 +1,99 @@
+# Directorios de Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform.tfstate.lock.info
+
+# Archivos de entorno
+.env
+.terraform/environment
+.env.*
+!.env.example
+!.env.auth
+!.env.perfil
+!.env.historial
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos de logs
+*.log
+
+# Archivos de Docker Compose locales
+docker-compose.override.yml
+
+# Directorio de claves
+config/keys/
+
+# Archivos de dependencias de Ruby (si aplica)
+/vendor/bundle/
+/.bundle/
+
+# Archivos de Python (si aplica)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de Node.js (si aplica)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos compilados
+*.class
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Archivos de configuración local
+*.local
+
+# Archivos de respaldo
+*~
+*.bak
+*.swp
+*.swo
+
+# Archivos temporales
+*.tmp
+.temp/
+
+# Archivos de configuración sensible
+secrets.auto.tfvars
+*.pem
+*.p12
+*.key
+*.crt
+cert.pem
+
+# Directorios de paquetes
+dist/
+build/
+*.egg-info/
+
+# Archivos de logs de Terraform
+*.log
+*.log.*
+
+# Archivos de bloqueo
+*.lock
+
+# Archivos de caché
+.cache/
+
+# Archivos de terraform plan
+*.tfplan

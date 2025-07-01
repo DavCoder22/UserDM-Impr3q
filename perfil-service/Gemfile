@@ -1,0 +1,49 @@
+source 'https://rubygems.org'
+
+# Especificar versión de Ruby
+ruby '3.2.8'
+
+# Dependencias principales
+gem 'sinatra', '~> 3.2.0'
+gem 'sequel', '~> 5.75.0'  # Para ORM
+gem 'pg', '~> 1.5.0'  # Para PostgreSQL
+gem 'jwt', '~> 2.7.0'  # Para autenticación JWT
+gem 'rackup', '~> 0.2.3'  # Para servidor web
+gem 'puma', '~> 6.4.0'  # Servidor de aplicaciones
+
+gem 'dotenv', '~> 2.8.0'  # Para manejo de variables de entorno
+gem 'httparty', '~> 0.21.0'  # Para comunicación con otros servicios
+
+group :development, :test do
+  # Depuración
+  gem 'pry', '~> 0.14.0'
+  gem 'pry-byebug', '~> 3.10.0'
+  
+  # Testing
+  gem 'rspec', '~> 3.12.0'
+  gem 'rack-test', '~> 2.1.0'
+  gem 'factory_bot', '~> 6.4.0'
+  gem 'faker', '~> 3.2.0'
+  
+  # Using older versions to avoid prism dependency
+  gem 'rubocop', '~> 0.93.1', require: false
+  gem 'rubocop-rspec', '~> 1.44.1', require: false
+end
+
+group :test do
+  # Limpieza de base de datos
+  gem 'database_cleaner-sequel', '~> 2.0.0'
+  
+  # Mocks HTTP
+  gem 'webmock', '~> 3.19.0'
+  
+  # Cobertura de pruebas
+  gem 'simplecov', '~> 0.22.0', require: false
+  
+  # Aserciones adicionales
+  gem 'rspec-json_expectations', '~> 2.2.0'
+  gem 'shoulda-matchers', '~> 5.3.0'
+  
+  # Pruebas de integración
+  gem 'capybara', '~> 3.40.0', require: false
+end

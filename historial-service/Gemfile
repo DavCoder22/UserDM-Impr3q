@@ -1,0 +1,50 @@
+source 'https://rubygems.org'
+
+# Especificar versión de Ruby
+ruby '3.2.8'
+
+# Dependencias principales
+gem 'sinatra', '~> 3.2.0'  # Framework web
+
+gem 'sequel', '~> 5.75.0'  # ORM para base de datos
+gem 'pg', '~> 1.5.0'  # Adaptador para PostgreSQL
+gem 'mysql2', '~> 0.5.5'  # Adaptador para MySQL (si es necesario)
+gem 'jwt', '~> 2.7.0'  # Autenticación JWT
+gem 'json', '~> 2.7.0'  # Manejo de JSON
+gem 'graphql', '~> 2.2.0'  # API GraphQL
+gem 'rackup', '~> 0.2.3'  # Servidor web
+gem 'puma', '~> 6.4.0'  # Servidor de aplicaciones
+gem 'graphql-anycable', '~> 1.5.0'  # Integración con ActionCable
+
+# Desarrollo y pruebas
+group :development, :test do
+  # Depuración
+  gem 'pry', '~> 0.14.0'
+  gem 'pry-byebug', '~> 3.10.0'
+  
+  # Testing
+  gem 'rspec', '~> 3.12.0'
+  gem 'rack-test', '~> 2.1.0'
+  gem 'factory_bot', '~> 6.4.0'
+  gem 'faker', '~> 3.2.0'
+  
+  # Using older versions to avoid prism dependency
+  gem 'rubocop', '~> 0.93.1', require: false
+  gem 'rubocop-rspec', '~> 1.44.1', require: false
+  gem 'dotenv', '~> 2.8.0'  # Variables de entorno
+end
+
+group :test do
+  # Limpieza de base de datos
+  gem 'database_cleaner-sequel', '~> 2.0.0'
+  
+  # Mocks HTTP
+  gem 'webmock', '~> 3.19.0'
+  
+  # Cobertura de pruebas
+  gem 'simplecov', '~> 0.22.0', require: false
+  
+  # Aserciones adicionales
+  gem 'rspec-json_expectations', '~> 2.2.0'
+  gem 'shoulda-matchers', '~> 5.3.0'
+end

@@ -1,0 +1,35 @@
+name: Deploy to Develop
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3.0'
+        
+    - name: Install dependencies
+      run: |
+        gem install bundler
+        bundle install
+        
+    - name: Run tests
+      run: |
+        # Add your test commands here
+        bundle exec rspec
+        
+    - name: Deploy to development
+      run: |
+        # Add your deployment commands here
+        echo "Deploying to development environment..."
+        # Example: cap development deploy

@@ -1,0 +1,53 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+  pull_request:
+    branches: [ main ]
+    types: [closed]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Verify approver
+      run: |
+        # Check if the PR was approved by the required user
+        if [ "${{ github.event.review.user.login }}" != "JuanGuevara90" ]; then
+          echo "PR must be approved by JuanGuevara90"
+          exit 1
+        fi
+    
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3.0'
+        
+    - name: Install dependencies
+      run: |
+        gem install bundler
+        bundle install
+        
+    - name: Run production tests
+      run: |
+        # Add your production test commands here
+        bundle exec rspec
+        
+    - name: Deploy to production
+      run: |
+        # Add your production deployment commands here
+        echo "Deploying to production environment..."
+        # Example: cap production deploy

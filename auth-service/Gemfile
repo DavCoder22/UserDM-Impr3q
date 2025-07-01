@@ -1,0 +1,29 @@
+source 'https://rubygems.org'
+
+# Especificar versión de Ruby
+ruby '3.2.8'
+
+# Dependencias principales
+gem 'sinatra', '~> 3.2.0'
+gem 'jwt', '~> 2.7.0'
+gem 'bcrypt', '~> 3.1.16', require: 'bcrypt', platforms: :ruby
+gem 'json', '~> 2.7.0'
+
+# Base de datos
+gem 'pg', '~> 1.5.0'
+gem 'sequel', '~> 5.75.0'
+
+# Validaciones
+gem 'validates_email_format_of', '~> 1.6.0'
+
+# Desarrollo
+group :development do
+  gem 'dotenv', '~> 2.8.0'
+  gem 'rerun', '~> 0.14.0'  # Para reiniciar automáticamente el servidor
+end
+
+# Pruebas (comentadas temporalmente)
+# group :test do
+#   gem 'rspec', '~> 3.12.0'
+#   gem 'rack-test', '~> 2.1.0'
+# end

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Servicio de autenticación
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env.auth
+    environment:
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_ISSUER=${JWT_ISSUER}
+      - JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION}
+      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION}
+    restart: unless-stopped
+
+  # Servicio de perfil (sin base de datos)
+  perfil-service:
+    build: ./perfil-service
+    ports:
+      - "4001:4001"
+    env_file:
+      - .env.perfil
+    environment:
+      # Usar SQLite en memoria
+      - DB_ADAPTER=sqlite
+      - DB_DATABASE=:memory:
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_ISSUER=${JWT_ISSUER}
+    depends_on:
+      - auth-service
+    restart: unless-stopped
+
+  # Servicio de historial (sin base de datos)
+  historial-service:
+    build: ./historial-service
+    ports:
+      - "4002:4002"
+    env_file:
+      - .env.historial
+    environment:
+      # Usar SQLite en memoria
+      - DB_ADAPTER=sqlite
+      - DB_DATABASE=:memory:
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_ISSUER=${JWT_ISSUER}
+    depends_on:
+      - auth-service
+    restart: unless-stopped

@@ -1,0 +1,54 @@
+name: Deploy to Test
+
+on:
+  push:
+    branches: [ test ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+        - test
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3.0'
+        
+    - name: Install dependencies
+      run: |
+        gem install bundler
+        bundle install
+        
+    - name: Run tests
+      run: |
+        # Add your test commands here
+        echo "Running tests..."
+        bundle exec rspec
+        
+    - name: Run integration tests
+      run: |
+        # Add your integration test commands here
+        echo "Running integration tests..."
+        
+    - name: Deploy to test environment
+      run: |
+        # Add your deployment commands here
+        echo "Deploying to test environment..."
+        # Example: cap test deploy
+        
+    - name: Run smoke tests
+      run: |
+        # Add smoke test commands here
+        echo "Running smoke tests..."
