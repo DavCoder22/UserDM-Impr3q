@@ -1,0 +1,85 @@
+require:
+  - rubocop-rspec
+  - rubocop-performance
+  - rubocop-rails
+
+AllCops:
+  # Configuración de la versión de Ruby
+  TargetRubyVersion: 3.2
+  
+  # Habilitar nuevas reglas por defecto
+  NewCops: enable
+  
+  # Excluir archivos y directorios
+  Exclude:
+    - 'db/schema.rb'
+    - 'db/migrate/*'
+    - 'vendor/**/*'
+    - 'node_modules/**/*'
+    - 'spec/spec_helper.rb'
+    - 'spec/rails_helper.rb'
+    - 'config/**/*'
+    - 'Gemfile'
+    - 'Rakefile'
+
+Layout/LineLength:
+  Max: 120
+  AllowHeredoc: true
+  AllowURI: true
+  IgnoreCopDirectives: true
+  AllowedPatterns:
+    - '^\s*# '
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*.rb'
+    - 'config/routes.rb'
+    - 'config/initializers/*.rb'
+
+Metrics/ClassLength:
+  Max: 200
+
+Metrics/MethodLength:
+  Max: 30
+  CountComments: false
+  Exclude:
+    - 'db/migrate/*.rb'
+
+Metrics/AbcSize:
+  Max: 25
+
+Metrics/PerceivedComplexity:
+  Max: 15
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Style/Documentation:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/EachForSimpleLoop:
+  Enabled: false
+
+Style/For:
+  Enabled: false
+
+Style/GlobalVars:
+  AllowedVariables:
+    - db_connection
+
+RSpec/DescribeClass:
+  Exclude:
+    - 'spec/requests/**/*.rb'
+    - 'spec/integration/**/*.rb'
+
+RSpec/ExampleLength:
+  Max: 10
+
+RSpec/MultipleExpectations:
+  Max: 5
+
+RSpec/NestedGroups:
+  Max: 5

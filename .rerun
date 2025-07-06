@@ -1,0 +1,49 @@
+# Archivos y directorios a ignorar
+- .git
+- .github
+- .idea
+- .rspec_*
+- .rubocop-*
+- .simplecov
+- bin
+- coverage
+- db/*.sqlite3
+- log
+- node_modules
+- public
+- spec
+- storage
+- tmp
+- vendor
+- *.log
+- *.sqlite3
+- *.sqlite3-*
+- .DS_Store
+- .env*
+- .rspec
+- .ruby-version
+- Gemfile.lock
+
+# Extensiones de archivo a observar
+*.rb
+*.ru
+*.yml
+*.yaml
+*.erb
+*.haml
+*.slim
+*.coffee
+*.js
+*.css
+*.scss
+*.sass
+*.html
+*.json
+
+# Directorios adicionales a observar
+app/
+config/
+lib/
+
+# Comando para ejecutar
+rackup -p 3000 config.ru

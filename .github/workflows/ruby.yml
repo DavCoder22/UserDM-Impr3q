@@ -1,0 +1,238 @@
+name: Ruby CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '.gitignore'
+      - '.rubocop.yml'
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly security updates
+  workflow_dispatch:
+
+# Environment variables shared across all jobs
+env:
+  RAILS_ENV: test
+  RACK_ENV: test
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
+  REDIS_URL: redis://localhost:6379/0
+  JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key-1234567890' }}
+  COVERAGE: 'true'
+  SIMPLECOV: 'true'
+
+# Job dependencies and workflow structure
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: auth_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: [6379:6379]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby-version: ['3.2.2']
+        node-version: ['20.x']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Needed for git history in coverage reports
+    
+    - name: Set up Ruby ${{ matrix.ruby-version }}
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true
+        cache-version: 1
+    
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'yarn'
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev
+        bundle config set --local path 'vendor/bundle'
+        bundle install --jobs 4 --retry 3
+        yarn install --frozen-lockfile
+    
+    - name: Set up test database
+      run: |
+        bundle exec rails db:create
+        bundle exec rails db:schema:load
+        bundle exec rails db:environment:set RAILS_ENV=test
+    
+    - name: Run RuboCop
+      run: bundle exec rubocop --parallel --format progress --format json --out rubocop-results.json
+    
+    - name: Run Brakeman
+      run: |
+        gem install brakeman
+        brakeman -q -w2 --no-pager --format json --output brakeman-output.json || true
+    
+    - name: Run tests with coverage
+      timeout-minutes: 30
+      run: |
+        mkdir -p test-results
+        bundle exec rspec --format progress \
+                         --format RspecJunitFormatter \
+                         --out test-results/rspec.xml \
+                         --tag ~type:system
+    
+    - name: Run system tests
+      if: matrix.ruby-version == '3.2.2'  # Only run system tests once
+      run: |
+        bundle exec rspec spec/system --format progress
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ matrix.ruby-version }}
+        path: |
+          test-results/**/*.xml
+          coverage/.resultset.json
+          coverage/**/*.json
+          coverage/**/*.html
+          brakeman-output.json
+          rubocop-results.json
+        retention-days: 7
+    
+    - name: Upload coverage to Codecov
+      if: success() && github.event_name != 'pull_request'
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: coverage/.resultset.json
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Check test coverage
+      if: always()
+      run: |
+        # Check if coverage meets minimum thresholds
+        COVERAGE=$(grep -oP '(?<=coverage: )[0-9.]+' coverage/.last_run.json)
+        MIN_COVERAGE=95
+        
+        if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
+          echo "::error::Test coverage ($COVERAGE%) is below minimum ($MIN_COVERAGE%)"
+          exit 1
+        else
+          echo "Test coverage: $COVERAGE%"
+        fi
+
+  security:
+    name: Security Scan
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Run OWASP Dependency-Check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'UserDM-Auth'
+        format: 'JSON'
+        fail_on_cvss_above: 7
+    
+    - name: Upload security scan results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-scan-results
+        path: dependency-check-report.json
+        retention-days: 7
+
+  deploy:
+    name: Deploy to Production
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ secrets.DOCKERHUB_USERNAME }}/userdm-auth
+        tags: |
+          type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+          type=sha,format=long
+    
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          RAILS_ENV=production
+          NODE_ENV=production
+    
+    - name: Notify deployment
+      if: success()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_DEPLOYMENT_WEBHOOK }}
+        SLACK_TITLE: "🚀 Deployment Successful"
+        SLACK_MESSAGE: "New version of UserDM-Auth has been deployed to production"
+        SLACK_COLOR: "#36a64f"
+    
+    - name: Create GitHub Release
+      if: success()
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ github.sha }}
+        tag_name: v1.0.0-${{ github.sha }}
+        body_path: ./RELEASE_NOTES.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

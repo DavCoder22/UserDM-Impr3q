@@ -1,20 +1,54 @@
-# Directorios de Terraform
-.terraform/
-.terraform.lock.hcl
-*.tfstate
-*.tfstate.*
-*.tfvars
-*.tfvars.json
-.terraform.tfstate.lock.info
-
 # Archivos de entorno
 .env
-.terraform/environment
 .env.*
 !.env.example
-!.env.auth
-!.env.perfil
-!.env.historial
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de registro
+*.log
+log/*
+!/log/.keep
+!/log/.keep_me
+log/test.log
+log/development.log
+log/production.log
+
+# Archivos de dependencias
+/vendor/bundle/
+/vendor/cache/
+/vendor/gems/
+/vendor/ruby/
+node_modules/
+yarn-debug.log*
+yarn-error.log*
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+.yarn/patches
+.yarn/plugins
+.yarn/releases
+.yarn/sdks
+.yarn/versions
+
+# Directorios de desarrollo
+/tmp/
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+
+# Archivos de base de datos
+*.sqlite3
+*.sqlite3-*
+*.db
+/db/*.sqlite3
+/db/*.sqlite3-*
 
 # Archivos de IDE
 .idea/
@@ -22,78 +56,246 @@
 *.swp
 *.swo
 *~
+.byebug_history
+.history
+.rake_tasks~
+.ruby-version
+.ruby-gemset
+.project
+.sass-cache/
+.sassc/
+.steam/
+.steam/sdk/
+.steam/steam
+.steam/steam.sh
+.steam/ubuntu12_32/
+.steam/ubuntu12_64/
+.steam/ubuntu12_32/steam
+.steam/ubuntu12_64/steam
+.steam/ubuntu12_32/steam-runtime/
+.steam/ubuntu12_64/steam-runtime/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+# Archivos de cobertura
+/coverage/
+/coverage.data
+/coverage/
+/coverage/*
+!/coverage/.resultset.json
+/coverage/.*
+!/coverage/.last_run.json
+/coverage/resultset-*.json
+/coverage/.resultset.json
+/coverage/coverage.xml
+/coverage/coverage.json
+/coverage/coverage-*.json
+/coverage/coverage-*.xml
+/coverage/coverage-*.html
+/coverage/coverage-*.txt
+/coverage/coverage-*.out
+/coverage/coverage-*.dat
+/coverage/coverage-*.yaml
+/coverage/coverage-*.yml
+
+# Archivos de paquetes
+*.gem
+/.bundle
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Docker
+.dockerignore
+.docker/
+
+# Archivos de configuración local
+config/initializers/secret_token.rb
+config/master.key
+config/credentials/*.key
+
+# Archivos de caché
+.sass-cache/
+
+# Archivos de pruebas
+/spec/tmp/
+/spec/reports/
+
+# Archivos de documentación
+/rdoc/
+/doc/
+
+# Archivos de bundler
+.bundle/
+
+# Archivos de Node
+node_modules/
+
+# Archivos de Docker Compose
+/docker-compose.override.yml
+
+# Archivos de Docker Volumes
+data/
+postgres_data/
+postgres_data_test/
+redis_data/
+
+# Archivos de desarrollo local
+.overmind.sock
+.overmind.sock.lock
+.overmind.sock.lock.*
+.pry_history
+.irb_history
+.ruby-version
+.ruby-gemset
+.rvmrc
+.ruby-version.lock
+.ruby-version.*
+.ruby-version.lock.*
+.ruby-version.*.lock
+.ruby-version.*.lock.*
+.ruby-version.lock.*
+.ruby-version.lock.*.lock
+.ruby-version.lock.*.lock.*
+.ruby-version.lock.*.lock.*.lock
+.ruby-version.lock.*.lock.*.lock.*
+.ruby-version.lock.*.lock.*.lock.*.lock
+.ruby-version.lock.*.lock.*.lock.*.lock.*
 
 # Archivos de sistema operativo
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-desktop.ini
 
-# Archivos de logs
-*.log
-
-# Archivos de Docker Compose locales
-docker-compose.override.yml
-
-# Directorio de claves
-config/keys/
-
-# Archivos de dependencias de Ruby (si aplica)
-/vendor/bundle/
-/.bundle/
-
-# Archivos de Python (si aplica)
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Archivos de Node.js (si aplica)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Archivos compilados
-*.class
-*.exe
-*.dll
-*.so
-*.dylib
-
-# Archivos de configuración local
-*.local
-
-# Archivos de respaldo
+# Archivos de editor
 *~
-*.bak
 *.swp
 *.swo
+*#
+.idea/
+.vscode/
+*.sublime-*
+!.sublime-project
+!.sublime-workspace
 
 # Archivos temporales
-*.tmp
-.temp/
+tmp/
+/tmp/
+!/tmp/.keep
+!/log/.keep
 
-# Archivos de configuración sensible
-secrets.auto.tfvars
-*.pem
-*.p12
-*.key
-*.crt
-cert.pem
+# Archivos de precompilación de assets
+/public/assets
+/public/packs
+/public/packs-test
+/public/system
 
-# Directorios de paquetes
-dist/
-build/
-*.egg-info/
+# Archivos de Spring
+/spring/*.pid
+/spring/.*.pid
+/spring/*.sock
+/spring/.*.sock
+/spring/*.log
+/spring/.*.log
 
-# Archivos de logs de Terraform
-*.log
-*.log.*
+# Archivos de rspec
+/spec/tmp/
+/spec/reports/
+/spec/examples.txt
+/coverage/
+/rspec-*.xml
+/rspec-*.html
+/rspec-*.json
+/rspec-*.out
+/rspec-*.log
+/rspec-*.txt
+/rspec-*.dat
+/rspec-*.yaml
+/rspec-*.yml
 
-# Archivos de bloqueo
-*.lock
+# Archivos de documentación generados
+doc/
+/rdoc/
+/yardoc/
+/yardoc/
+/doc/
+/rdoc/
+/.yardoc/
+/.yardopts
+/.yardoc/
+/.yardoc/*
+!/doc/README_FOR_APP
+
+# Archivos de paquetes
+*.gem
+*.gemfile.lock
+Gemfile.lock
+yarn.lock
+package-lock.json
+
+# Archivos de configuración local
+config/initializers/secret_token.rb
+config/master.key
+config/credentials/*.key
+config/credentials.yml.enc
+config/credentials/*.key.enc
+config/database.yml
+config/database.yml.*
+config/secrets.yml
+config/secrets.yml.*
+config/*.local.yml
+config/*.local.yaml
+config/*.local.yml.enc
+config/*.local.yaml.enc
+config/*.local.yml.enc.*
+config/*.local.yaml.enc.*
 
 # Archivos de caché
-.cache/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+.jekyll-timings-*
+.jekyll-version
+.jekyll-version-*
+.jekyll-version-*/*
+.jekyll-version-*/*/*
+.jekyll-version-*/*/*/*
+.jekyll-version-*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
+.jekyll-version-*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
 
-# Archivos de terraform plan
-*.tfplan
+# Archivos de desarrollo local
+.overmind.sock
+.overmind.sock.lock
+.overmind.sock.lock.*
+.pry_history
+.irb_history
+.ruby-version
+.ruby-gemset
+.rvmrc
+
+# Archivos de sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

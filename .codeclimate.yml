@@ -1,0 +1,97 @@
+version: "2"
+
+checks:
+  # Maintainability
+  similar-code:
+    enabled: true
+  identical-code:
+    enabled: true
+  method-lines:
+    enabled: true
+    config:
+      threshold: 25
+  method-complexity:
+    enabled: true
+    config:
+      threshold: 5
+  method-count:
+    enabled: true
+    config:
+      threshold: 25
+  file-lines:
+    enabled: true
+    config:
+      threshold: 250
+  nested-control-flow:
+    enabled: true
+    config:
+      threshold: 4
+  return-statements:
+    enabled: true
+    config:
+      threshold: 4
+
+exclude_patterns:
+  - "bin/*"
+  - "db/**/*"
+  - "config/**/*"
+  - "spec/**/*"
+  - "test/**/*"
+  - "vendor/**/*"
+  - "**/*_test.rb"
+  - "**/test_*.rb"
+  - "**/spec_helper.rb"
+  - "**/rails_helper.rb"
+  - "**/support/**/*"
+  - "**/migrations/**/*"
+  - "**/node_modules/**/*"
+  - "**/vendor/**/*"
+  - "**/public/**/*"
+  - "**/tmp/**/*"
+  - "**/log/**/*"
+  - "**/coverage/**/*"
+
+engines:
+  brakeman:
+    enabled: true
+  bundler-audit:
+    enabled: true
+  csslint:
+    enabled: true
+  duplication:
+    enabled: true
+    config:
+      languages:
+        - ruby
+        - javascript
+  eslint:
+    enabled: true
+    config:
+      config: .eslintrc.json
+  fixme:
+    enabled: true
+  markdownlint:
+    enabled: true
+  rubocop:
+    enabled: true
+    config:
+      file: .rubocop.yml
+  scss-lint:
+    enabled: true
+
+ratings:
+  paths:
+    - "**.rb"
+    - "**.js"
+    - "**.jsx"
+    - "**.ts"
+    - "**.tsx"
+    - "**.css"
+    - "**.scss"
+    - "**.sass"
+    - "**.md"
+
+exclude_fingerprints:
+  - 3d9a8d1f6c5e2b4a
+  - 7f2e1d9c8b6a5f4e
+  - c8b7a6d5e4f3g2h1

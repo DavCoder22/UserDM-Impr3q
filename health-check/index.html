@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Service Health Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .healthy {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .unhealthy {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .checking {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>Auth Service Health Check</h1>
+    <div id="status">
+        <div id="register" class="status checking">Register Service: Checking...</div>
+        <div id="login" class="status checking">Login Service: Checking...</div>
+        <div id="profile" class="status checking">Profile Service: Checking...</div>
+        <div id="password" class="status checking">Password Service: Checking...</div>
+        <div id="logout" class="status checking">Logout Service: Checking...</div>
+        <div id="history" class="status checking">History Service: Checking...</div>
+        <div id="database" class="status checking">Database: Checking...</div>
+        <div id="redis" class="status checking">Redis: Checking...</div>
+    </div>
+
+    <script>
+        const services = [
+            { id: 'register', url: '/register/health' },
+            { id: 'login', url: '/login/health' },
+            { id: 'profile', url: '/profile/health' },
+            { id: 'password', url: '/password/health' },
+            { id: 'logout', url: '/logout/health' },
+            { id: 'history', url: '/history/health' },
+            { id: 'database', url: '/health/db' },
+            { id: 'redis', url: '/health/redis' }
+        ];
+
+        function checkService(service) {
+            const element = document.getElementById(service.id);
+            
+            fetch(service.url)
+                .then(response => {
+                    if (!response.ok) throw new Error('Service not healthy');
+                    return response.json();
+                })
+                .then(data => {
+                    element.textContent = `${service.id.charAt(0).toUpperCase() + service.id.slice(1)}: ${data.status || 'Healthy'}`;
+                    element.className = 'status healthy';
+                })
+                .catch(error => {
+                    element.textContent = `${service.id.charAt(0).toUpperCase() + service.id.slice(1)}: Unhealthy (${error.message})`;
+                    element.className = 'status unhealthy';
+                });
+        }
+
+        // Check all services on page load
+        services.forEach(service => checkService(service));
+
+        // Check services every 30 seconds
+        setInterval(() => {
+            services.forEach(service => checkService(service));
+        }, 30000);
+    </script>
+</body>
+</html>

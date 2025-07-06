@@ -1,0 +1,6 @@
+--require spec_helper
+--format documentation
+--format RspecJunitFormatter
+--out test-results/rspec.xml
+--color
+--order random
