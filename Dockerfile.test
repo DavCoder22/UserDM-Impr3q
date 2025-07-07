@@ -18,8 +18,8 @@ ENV BUNDLE_PATH=/usr/local/bundle \
     RAILS_ENV=test \
     RACK_ENV=test
 
-# Install gems
-COPY Gemfile Gemfile.lock ./
+# Install gems (solo copiamos Gemfile, no Gemfile.lock)
+COPY Gemfile ./
 RUN gem install bundler -v 2.4.10 && \
     bundle config set --local without 'production' && \
     bundle install --jobs 4 --retry 3

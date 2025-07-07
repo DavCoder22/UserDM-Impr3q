@@ -2,6 +2,36 @@
 
 A collection of microservices for handling user authentication, authorization, and session management for the 3D printing quote and order system.
 
+## 🚀 Inicio Rápido
+
+### 1. Limpieza del Sistema (Opcional)
+Si tienes archivos obsoletos o cache acumulado, ejecuta la limpieza:
+
+```powershell
+.\clean_all.ps1
+```
+
+### 2. Verificación Rápida
+Verifica que todo esté en orden:
+
+```powershell
+.\quick_verify.ps1
+```
+
+### 3. Configuración y Despliegue
+Configura y despliega todo el sistema:
+
+```powershell
+.\deploy_and_test.ps1
+```
+
+### 4. Verificación Completa
+Ejecuta una verificación completa del sistema:
+
+```powershell
+.\verify_complete_setup.ps1
+```
+
 ## Architecture
 
 The system is composed of the following microservices:
@@ -12,6 +42,8 @@ The system is composed of the following microservices:
 4. **Auth Password Service** - Handles password reset and change operations
 5. **Auth Logout Service** - Manages session invalidation
 6. **Auth History Service** - Tracks user login history
+7. **Perfil Service** - Complete profile management
+8. **Historial Service** - Complete history management
 
 ## Prerequisites
 
@@ -34,7 +66,7 @@ cd UserDM-Impr3q
 Copy the example environment file and update the values:
 
 ```bash
-cp .env.example .env
+cp env.example .env
 ```
 
 Edit the `.env` file with your configuration.
@@ -56,6 +88,76 @@ docker-compose up -d --build
 ```bash
 docker-compose exec db psql -U postgres -d auth_db -f /docker-entrypoint-initdb.d/001_create_schema.sql
 ```
+
+## 🧹 Limpieza del Sistema
+
+### Limpieza Completa
+Elimina cache, archivos temporales y pruebas obsoletas:
+
+```powershell
+.\clean_all.ps1
+```
+
+Opciones disponibles:
+- `-SkipDocker`: Saltar limpieza de Docker
+- `-SkipCache`: Saltar limpieza de cache
+- `-SkipObsolete`: Saltar limpieza de archivos obsoletos
+- `-SkipBackup`: Saltar limpieza de archivos de backup
+- `-SkipEmpty`: Saltar limpieza de directorios vacíos
+
+### Limpieza Selectiva
+```powershell
+# Solo limpiar Docker
+.\clean_all.ps1 -SkipCache -SkipObsolete -SkipBackup -SkipEmpty
+
+# Solo limpiar archivos obsoletos
+.\clean_all.ps1 -SkipDocker -SkipCache -SkipBackup -SkipEmpty
+```
+
+## 🚀 Despliegue y Pruebas
+
+### Despliegue Completo
+Despliega el sistema y ejecuta todas las pruebas:
+
+```powershell
+.\deploy_and_test.ps1
+```
+
+Opciones disponibles:
+- `-Mode production|test`: Modo de despliegue
+- `-SkipTests`: Saltar ejecución de pruebas
+- `-SkipHealthCheck`: Saltar verificación de salud
+
+### Despliegue Rápido
+```powershell
+# Solo despliegue sin pruebas
+.\deploy_and_test.ps1 -SkipTests
+
+# Solo verificación de salud
+.\deploy_and_test.ps1 -SkipTests -SkipHealthCheck
+```
+
+## 🔍 Verificación del Sistema
+
+### Verificación Rápida
+Verificación básica del estado del sistema:
+
+```powershell
+.\quick_verify.ps1
+```
+
+### Verificación Completa
+Verificación exhaustiva de todos los componentes:
+
+```powershell
+.\verify_complete_setup.ps1
+```
+
+Opciones disponibles:
+- `-SkipDocker`: Saltar verificación de Docker
+- `-SkipServices`: Saltar verificación de servicios
+- `-SkipTests`: Saltar verificación de pruebas
+- `-SkipTerraform`: Saltar verificación de Terraform
 
 ## CORS Configuration
 
@@ -164,78 +266,34 @@ SMTP_PASSWORD=your_password
 
 ## Running Tests
 
-El proyecto incluye un conjunto completo de pruebas unitarias, de integración y de extremo a extremo. Para ejecutar las pruebas, sigue estos pasos:
+El proyecto incluye un conjunto completo de pruebas unitarias, de integración y de extremo a extremo.
 
-#### Requisitos previos
+### Ejecutar Todas las Pruebas
 
-- Ruby 3.2.2
-- PostgreSQL 13+
-- Redis 6+
-- Bundler
-
-#### Configuración
-
-1. Instala las dependencias:
-
-```bash
-bundle install
+```powershell
+.\deploy_and_test.ps1
 ```
 
-2. Configura las bases de datos de prueba:
+### Ejecutar Pruebas Específicas
 
-```bash
-bundle exec rake setup_test_db
+```powershell
+# Solo pruebas unitarias
+docker-compose -f docker-compose.test.yml run --rm test_runner bundle exec rspec spec/models/
+
+# Solo pruebas de integración
+docker-compose -f docker-compose.test.yml run --rm test_runner bundle exec rspec spec/integration/
+
+# Solo pruebas de API
+.\test_microservice_endpoints.ps1
 ```
 
-#### Ejecutar pruebas
-
-Para ejecutar todas las pruebas:
+### Pruebas con Cobertura
 
 ```bash
-bundle exec rspec
-```
-
-Para ejecutar pruebas específicas:
-
-```bash
-# Ejecutar pruebas de un archivo específico
-bundle exec rspec spec/models/user_spec.rb
-
-# Ejecutar una prueba específica por línea
-bundle exec rspec spec/models/user_spec.rb:42
-
-# Ejecutar pruebas con cobertura
 COVERAGE=true bundle exec rspec
 ```
 
-#### Tareas Rake útiles
-
-```bash
-# Ejecutar todas las pruebas
-bundle exec rake
-
-# Ejecutar RuboCop
-bundle exec rake rubocop
-
-# Verificar cobertura de código
-bundle exec rake coverage
-
-# Reiniciar la base de datos de prueba
-bundle exec rake reset_test_db
-
-# Ver estado de la base de datos
-bundle exec rake db_status
-```
-
-#### Pruebas en Docker
-
-También puedes ejecutar las pruebas en un contenedor Docker:
-
-```bash
-docker-compose -f docker-compose.test.yml up --build --exit-code-from test
-```
-
-#### Informes de cobertura
+### Informes de Cobertura
 
 Después de ejecutar las pruebas con cobertura, puedes ver el informe en:
 
@@ -243,7 +301,7 @@ Después de ejecutar las pruebas con cobertura, puedes ver el informe en:
 coverage/index.html
 ```
 
-### Linting
+## Linting
 
 El proyecto utiliza RuboCop para mantener un estilo de código consistente:
 
@@ -258,7 +316,7 @@ bundle exec rubocop -a
 git diff --name-only | xargs bundle exec rubocop
 ```
 
-### Integración Continua
+## Integración Continua
 
 El proyecto incluye un flujo de trabajo de GitHub Actions que se ejecuta en cada push y pull request. El flujo de trabajo:
 
@@ -270,7 +328,7 @@ El proyecto incluye un flujo de trabajo de GitHub Actions que se ejecuta en cada
 
 Puedes ver el estado de la integración continua en la pestaña "Actions" de tu repositorio.
 
-## Estructura de pruebas
+## Estructura de Pruebas
 
 ```
 spec/
@@ -298,6 +356,165 @@ spec/
 └── spec_helper.rb        # Configuración principal de RSpec
 ```
 
+## 🏗️ Despliegue en Producción
+
+### Con Docker Compose
+
+```powershell
+# Configurar variables de producción
+Copy-Item env.example .env
+# Editar .env con valores de producción
+
+# Desplegar
+.\deploy_and_test.ps1 -Mode production
+```
+
+### Con Terraform (AWS)
+
+```bash
+cd terraform
+
+# Configurar variables
+# Crear terraform.tfvars con tus valores
+
+# Desplegar
+terraform init
+terraform plan
+terraform apply
+```
+
+#### Infraestructura Desplegada
+- **VPC** con subnets públicas y privadas
+- **Application Load Balancer** con IP elástica fija
+- **Auto Scaling Group** para alta disponibilidad
+- **RDS PostgreSQL** para base de datos
+- **ElastiCache Redis** para cache
+- **Security Groups** configurados
+- **IAM Roles** para permisos
+
+#### URLs de Acceso
+Después del despliegue, obtendrás:
+- **Load Balancer DNS**: `http://[alb-dns-name]`
+- **IP Elástica**: `http://[elastic-ip]`
+- **Auth Service**: `http://[alb-dns-name]/api/v1/auth`
+- **Profile Service**: `http://[alb-dns-name]/api/v1/profile`
+- **History Service**: `http://[alb-dns-name]/api/v1/history`
+- **Health Check**: `http://[alb-dns-name]/health`
+
+Ver la documentación completa en [terraform/README.md](terraform/README.md).
+
+## 📋 Comandos Útiles
+
+### Gestión de Servicios
+
+```powershell
+# Ver logs de un servicio específico
+docker-compose logs -f auth-login-service
+
+# Reiniciar un servicio
+docker-compose restart auth-login-service
+
+# Detener todos los servicios
+docker-compose down
+
+# Ver estado de los servicios
+docker-compose ps
+```
+
+### Pruebas y Verificación
+
+```powershell
+# Verificación rápida
+.\quick_verify.ps1
+
+# Verificación completa
+.\verify_complete_setup.ps1
+
+# Pruebas de endpoints
+.\test_microservice_endpoints.ps1
+
+# Limpieza del sistema
+.\clean_all.ps1
+```
+
+### Desarrollo
+
+```powershell
+# Configuración completa
+.\setup_complete.ps1
+
+# Despliegue y pruebas (Script simplificado)
+.\deploy_simple.ps1
+
+# Verificación rápida (Script simplificado)
+.\verify_simple.ps1
+
+# Verificación de Terraform
+.\verify_terraform.ps1
+
+# Scripts originales (pueden tener problemas de codificación)
+.\deploy_and_test.ps1
+.\quick_verify.ps1
+```
+
+## Troubleshooting
+
+### Problemas Comunes
+
+1. **Docker no está ejecutándose**
+   ```powershell
+   # Verificar Docker
+   docker version
+   ```
+
+2. **Servicios no inician**
+   ```powershell
+   # Ver logs
+   docker-compose logs
+   
+   # Verificar configuración
+   docker-compose config
+   ```
+
+3. **Pruebas fallan**
+   ```powershell
+   # Limpiar y reintentar (Scripts simplificados)
+   .\clean_simple.ps1
+   .\deploy_simple.ps1
+   
+   # Scripts originales (pueden tener problemas de codificación)
+   .\clean_all.ps1
+   .\deploy_and_test.ps1
+   ```
+
+4. **Endpoints no responden**
+   ```powershell
+   # Verificar salud (Script simplificado)
+   .\verify_simple.ps1
+   
+   # Script original (puede tener problemas de codificación)
+   .\quick_verify.ps1
+   
+   # Verificar servicios
+   docker-compose ps
+   ```
+
+### Logs y Diagnóstico
+
+```powershell
+# Ver logs de todos los servicios
+docker-compose logs
+
+# Ver logs de un servicio específico
+docker-compose logs auth-login-service
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Verificar configuración
+docker-compose config
+```
+
 ## Contribuyendo
 
 1. Haz un fork del proyecto
@@ -317,18 +534,6 @@ Distribuido bajo la licencia MIT. Ver `LICENSE` para más información.
 Tu Nombre - [@tu_usuario](https://twitter.com/tu_usuario)
 
 Enlace del proyecto: [https://github.com/tu_usuario/UserDM-Impr3q](https://github.com/tu_usuario/UserDM-Impr3q)
-
-### Ejecutar pruebas para el servicio de registro
-
-```bash
-docker-compose run --rm auth-register-service rspec
-```
-
-### Ejecutar pruebas para el servicio de login
-
-```bash
-docker-compose run --rm auth-login-service rspec
-```
 
 ### Environment Variables
 
@@ -402,10 +607,14 @@ UserDM-Impr3q/
 ├── auth-password-service/   # Password reset functionality
 ├── auth-logout-service/     # Session termination
 ├── auth-history-service/    # Login history
+├── perfil-service/          # Complete profile management
+├── historial-service/       # Complete history management
 ├── auth-alb/                # Application Load Balancer
 ├── lib/                    # Shared code
 │   └── jwt_auth.rb         # JWT authentication module
 ├── docker-compose.yml      # Docker Compose configuration
+├── docker-compose.test.yml # Docker Compose for testing
+├── terraform/              # Infrastructure as Code
 └── README.md               # This file
 ```
 
@@ -419,8 +628,10 @@ UserDM-Impr3q/
 | Password | 3004 | Password reset |
 | Logout | 3005 | Session termination |
 | History | 3006 | Login history |
+| Perfil | 3007 | Complete profile management |
+| Historial | 3008 | Complete history management |
 | ALB | 80 | Application Load Balancer |
-| PostgreSQL | 5432 | Database |
+| PostgreSQL | 5435 | Database |
 | Redis | 6379 | Token blacklist |
 
 ## 🔐 Authentication

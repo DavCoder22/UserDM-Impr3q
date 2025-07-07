@@ -28,6 +28,7 @@ group :development, :test do
   # Test coverage
   gem 'simplecov', '~> 0.22.0', require: false
   gem 'simplecov-console', '~> 0.9.1', require: false
+  # gem 'simplecov-lcov', '~> 0.8.0', require: false  # Comentado temporalmente
   
   # CI/CD
   gem 'rspec_junit_formatter', '~> 0.6.0', require: false

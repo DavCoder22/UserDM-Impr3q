@@ -75,6 +75,90 @@ A secure, scalable authentication and authorization microservice built with Ruby
 - Node.js 16+ (for frontend development)
 - Yarn or npm (for frontend dependencies)
 
+## 🧪 Testing
+
+### Running Tests
+
+The authentication service includes comprehensive test coverage. You can run tests in multiple ways:
+
+#### Option 1: Automatic Detection (Recommended)
+```bash
+# Windows PowerShell
+.\run_tests_auto.ps1
+
+# Linux/Mac
+./run_tests_auto.sh
+```
+
+This script automatically detects if you have Ruby or Docker available and uses the appropriate method.
+
+#### Option 2: With Ruby (Local)
+```bash
+# Install dependencies
+bundle install
+
+# Run all tests
+bundle exec rspec
+
+# Run specific test files
+bundle exec rspec spec/models/user_spec.rb
+bundle exec rspec spec/controllers/auth_controller_spec.rb
+
+# Run with coverage report
+bundle exec rspec --format documentation
+```
+
+#### Option 3: With Docker
+```bash
+# Build and run tests
+docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+
+# Or use the script
+.\test_with_docker.ps1
+```
+
+### Test Structure
+
+```
+spec/
+├── models/                 # Model tests
+│   ├── user_spec.rb       # User model tests
+│   └── session_spec.rb    # Session model tests
+├── controllers/           # Controller tests
+│   └── auth_controller_spec.rb
+├── integration/          # Integration tests
+├── factories/           # Test data factories
+│   └── user_factory.rb
+├── support/             # Test configuration
+│   ├── database_setup.rb
+│   ├── factory_bot.rb
+│   └── test_environment.rb
+└── spec_helper.rb       # Main test configuration
+```
+
+### Test Coverage
+
+The service maintains high test coverage:
+- **Overall Coverage**: 80% minimum
+- **Critical Files**: 100% coverage required
+- **Models**: 90%+ coverage
+- **Controllers**: 85%+ coverage
+
+### Test Data
+
+Tests use FactoryBot for generating test data:
+- User factories with different roles (cliente, impresor, admin)
+- Session factories with various states
+- Login history factories
+
+### Database Testing
+
+Tests automatically:
+- Create test database tables
+- Clean data between tests
+- Use transaction-based isolation
+- Handle database connection errors gracefully
+
 ## 🚀 Deployment
 
 ### Prerequisites
@@ -199,13 +283,13 @@ services:
       - auth-network
 
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -217,751 +301,226 @@ services:
     networks:
       - auth-network
 
-networks:
-  auth-network:
-    driver: bridge
-
 volumes:
   postgres_data:
   redis_data:
-```
 
-### Nginx Configuration
-
-Create an Nginx configuration file at `/etc/nginx/sites-available/auth-service`:
-
-```nginx
-upstream auth_service {
-  server 127.0.0.1:3000;
-  keepalive 32;
-}
-
-server {
-    listen 80;
-    server_name auth.yourdomain.com;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name auth.yourdomain.com;
-
-    # SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/auth.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/auth.yourdomain.com/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
-    ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_tickets off;
-    ssl_stapling on;
-    ssl_stapling_verify on;
-
-    # Security Headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Content-Security-Policy "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval';" always;
-
-    # Logging
-    access_log /var/log/nginx/auth-service-access.log;
-    error_log /var/log/nginx/auth-service-error.log;
-
-    # Proxy Configuration
-    location / {
-        proxy_pass http://auth_service;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Timeouts
-        proxy_connect_timeout 300s;
-        proxy_send_timeout 300s;
-        proxy_read_timeout 300s;
-        send_timeout 300s;
-        
-        # Buffer size
-        proxy_buffer_size 128k;
-        proxy_buffers 4 256k;
-        proxy_busy_buffers_size 256k;
-    }
-
-    # Health Check Endpoint
-    location /health {
-        access_log off;
-        add_header Content-Type text/plain;
-        return 200 "OK\n";
-    }
-
-    # Disable access to sensitive files
-    location ~ /\.(?!well-known) {
-        deny all;
-    }
-}
+networks:
+  auth-network:
+    driver: bridge
 ```
 
 ### Deployment Steps
 
-1. **Server Setup**
+1. **Clone the repository**:
    ```bash
-   # Update system packages
-   sudo apt update && sudo apt upgrade -y
-   
-   # Install required packages
-   sudo apt install -y git docker.io docker-compose nginx certbot python3-certbot-nginx
-   
-   # Add your user to the docker group
-   sudo usermod -aG docker $USER
-   newgrp docker
-   ```
-
-2. **Clone the Repository**
-   ```bash
-   git clone https://github.com/your-username/auth-service.git
+   git clone <repository-url>
    cd auth-service
    ```
 
-3. **Configure Environment**
+2. **Set up environment variables**:
    ```bash
    cp .env.example .env
    # Edit .env with your production values
-   nano .env
-   
-   # Generate a secure JWT secret
-   echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
    ```
 
-4. **Obtain SSL Certificate**
-   ```bash
-   sudo certbot --nginx -d auth.yourdomain.com --non-interactive --agree-tos -m admin@yourdomain.com --redirect
-   ```
-
-5. **Deploy the Application**
-   ```bash
-   # Build and start the services
-   docker-compose -f docker-compose.prod.yml up -d --build
-   
-   # Run database migrations
-   docker-compose -f docker-compose.prod.yml run --rm app rake db:migrate
-   
-   # Create admin user (if needed)
-   # docker-compose -f docker-compose.prod.yml run --rm app rake admin:create[admin@example.com,securepassword]
-   ```
-
-6. **Set Up Log Rotation**
-7. **Start the development server**
-
-   ```bash
-   rackup -p 3000
-   ```
-
-   The service will be available at `http://localhost:3000`
-
-### Running with Docker
-
-1. Build and start the containers:
-   ```bash
-   docker-compose up --build
-   ```
-
-2. The service will be available at `http://localhost:3000`
-
-### Running Tests
-
-```bash
-# Run all tests
-bundle exec rspec
-
-# Run specific test file
-bundle exec rspec spec/controllers/auth_controller_spec.rb
-
-# Run with coverage report
-COVERAGE=true bundle exec rspec
-```
-
-## 🔧 Variables de Entorno
-
-El servicio utiliza las siguientes variables de entorno:
-
-### Configuración General
-
-```env
-# Entorno de ejecución (development|test|production)
-RACK_ENV=development
-
-# Puerto del servidor
-PORT=4567
-
-# Nivel de log (debug|info|warn|error|fatal)
-LOG_LEVEL=info
-
-# Orígenes permitidos para CORS (separados por comas)
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
-```
-
-### Base de Datos PostgreSQL (Usuarios)
-
-```env
-DB_PG_HOST=localhost
-DB_PG_PORT=5432
-DB_PG_NAME=auth_service_development
-DB_PG_USER=postgres
-DB_PG_PASSWORD=postgres
-DB_PG_POOL=5
-DB_PG_TIMEOUT=5000
-```
-
-### Base de Datos MySQL (Tokens)
-
-```env
-DB_MYSQL_HOST=localhost
-DB_MYSQL_PORT=3306
-DB_MYSQL_NAME=auth_service_tokens
-DB_MYSQL_USER=root
-DB_MYSQL_PASSWORD=root
-DB_MYSQL_POOL=5
-DB_MYSQL_TIMEOUT=5000
-```
-
-### Configuración JWT
-
-```env
-# Clave secreta para firmar tokens (¡cambiar en producción!)
-JWT_SECRET=tu_clave_secreta_muy_segura
-
-# Tiempo de expiración del token en segundos (1 hora por defecto)
-JWT_EXPIRATION=3600
-
-# Algoritmo de firma (HS256, HS384, HS512, RS256, etc.)
-JWT_ALGORITHM=HS256
-
-# Emisor del token (opcional)
-JWT_ISSUER=auth-service
-```
-
-## 📚 Estructura del Proyecto
-
-```text
-auth-service/
-├── app/                     # Código fuente de la aplicación
-│   ├── controllers/         # Controladores de la API
-│   ├── models/              # Modelos de datos
-│   │   ├── user.rb          # Modelo de usuario
-│   │   └── token.rb         # Modelo de token
-│   └── serializers/         # Serializadores para respuestas JSON
-├── config/                  # Configuraciones
-│   ├── database.rb          # Configuración de bases de datos
-│   ├── environment.rb       # Configuración del entorno
-│   └── initializers/        # Inicializadores
-├── db/                      # Migraciones y seeds
-│   ├── migrate/             # Archivos de migración
-│   └── seeds.rb             # Datos iniciales
-├── spec/                    # Pruebas
-│   ├── factories/           # Factorías para pruebas
-│   ├── requests/            # Pruebas de integración
-│   ├── support/             # Configuración de pruebas
-│   └── spec_helper.rb       # Configuración de RSpec
-├── .env.example            # Plantilla de variables de entorno
-├── .gitignore              # Archivos ignorados por Git
-├── config.ru               # Configuración de Rack
-├── Gemfile                 # Dependencias de Ruby
-├── README.md               # Este archivo
-└── Rakefile               # Tareas de Rake
-```
-
-## 📡 API Endpoints
-
-### Autenticación
-
-#### POST /api/v1/register
-
-Registra un nuevo usuario en el sistema.
-
-**Parámetros (JSON):**
-
-```json
-{
-  "nombre": "Juan Pérez",
-  "correo": "juan@ejemplo.com",
-  "password": "ContraseñaSegura123",
-  "password_confirmation": "ContraseñaSegura123",
-  "rol": "usuario"
-}
-```
-
-**Respuesta Exitosa (201 Created):**
-
-```json
-{
-  "id": 1,
-  "nombre": "Juan Pérez",
-  "correo": "juan@ejemplo.com",
-  "rol": "usuario",
-  "created_at": "2023-04-15T10:30:00Z"
-}
-```
-
-**Errores (400 Bad Request):**
-
-- `email_taken`: El correo electrónico ya está en uso
-- `invalid_email`: Formato de correo electrónico inválido
-- `password_too_short`: La contraseña es demasiado corta (mínimo 8 caracteres)
-- `passwords_dont_match`: Las contraseñas no coinciden
-
-#### POST /api/v1/login
-
-Autentica a un usuario y devuelve un token JWT.
-
-**Parámetros (JSON):**
-
-```json
-{
-  "correo": "juan@ejemplo.com",
-  "password": "ContraseñaSegura123"
-}
-```
-
-**Respuesta Exitosa (200 OK):**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_in": 3600,
-  "user": {
-    "id": 1,
-    "nombre": "Juan Pérez",
-    "correo": "juan@ejemplo.com",
-    "rol": "usuario"
-  }
-}
-```
-
-**Errores (401 Unauthorized):**
-
-- `invalid_credentials`: Credenciales inválidas
-- `account_locked`: La cuenta ha sido bloqueada temporalmente
-
-### Usuarios
-
-#### GET /api/v1/me
-
-Obtiene la información del usuario autenticado.
-
-**Headers requeridos:**
-
-```
-Authorization: Bearer <token>
-```
-
-**Respuesta Exitosa (200 OK):**
-
-```json
-{
-  "id": 1,
-  "nombre": "Juan Pérez",
-  "correo": "juan@ejemplo.com",
-  "rol": "usuario",
-  "created_at": "2023-04-15T10:30:00Z",
-  "updated_at": "2023-04-15T10:30:00Z"
-}
-```
-
-**Errores (401 Unauthorized):**
-
-- `missing_token`: No se proporcionó token
-- `invalid_token`: Token inválido o expirado
-
-## 🔐 Estructura JWT
-
-Los tokens JWT están firmados con el algoritmo especificado en `JWT_ALGORITHM` y contienen los siguientes claims:
-
-| Claim       | Tipo    | Descripción                                  |
-|-------------|---------|----------------------------------------------|
-| `id`        | Integer | ID único del usuario                         |
-| `email`     | String  | Correo electrónico del usuario               |
-| `rol`       | String  | Rol del usuario (usuario/admin)              |
-| `iat`       | Integer | Fecha de emisión (timestamp en segundos)     |
-| `exp`       | Integer | Fecha de expiración (timestamp en segundos)  |
-| `iss`       | String  | Emisor del token (opcional)                  |
-
-**Ejemplo de payload decodificado:**
-
-```json
-{
-  "id": 1,
-  "email": "juan@ejemplo.com",
-  "rol": "usuario",
-  "iat": 1717011123,
-  "exp": 1717014723,
-  "iss": "auth-service"
-}
-```
-
-## 🧪 Pruebas
-
-El servicio incluye un conjunto completo de pruebas automatizadas:
-
-### Pruebas Unitarias
-
-- Modelos (User, Token)
-- Controladores
-- Serializadores
-- Helpers
-
-### Pruebas de Integración
-
-- Endpoints de la API
-- Flujos de autenticación
-- Validaciones de seguridad
-
-### Ejecutando las Pruebas
-
-1. Configurar la base de datos de prueba:
-
-   ```bash
-   RACK_ENV=test ruby config/database.rb migrate
-   ```
-
-2. Ejecutar las pruebas:
-
-   ```bash
-   bundle exec rspec
-   ```
-
-3. Ver la cobertura de código (se genera en `coverage/`):
-
-   ```bash
-   open coverage/index.html
-   ```
-
-### Generar datos de prueba
-
-```bash
-# Generar 10 usuarios de prueba
-bundle exec rake db:seed:users[10]
-
-# Generar 100 tokens de prueba
-bundle exec rake db:seed:tokens[100]
-```
-
-## 🚀 Despliegue
-
-### Requisitos de Producción
-
-- Ruby 3.x
-- PostgreSQL 13+
-- MySQL 8.0+
-- Redis (para caché, opcional)
-- Nginx o similar (como proxy inverso)
-
-### Variables de Entorno de Producción
-
-Asegúrate de configurar estas variables en producción:
-
-```env
-RACK_ENV=production
-JWT_SECRET=clave_secreta_muy_larga_y_compleja
-DB_PG_PASSWORD=contraseña_segura
-DB_MYSQL_PASSWORD=contraseña_segura
-```
-
-### Despliegue con Docker
-
-1. Construir la imagen:
-
-   ```bash
-   docker build -t auth-service .
-   ```
-
-2. Ejecutar con Docker Compose:
-
+3. **Deploy with Docker Compose**:
    ```bash
    docker-compose -f docker-compose.prod.yml up -d
    ```
 
-### Despliegue en Kubernetes
+4. **Verify deployment**:
+   ```bash
+   curl http://localhost:3000/health
+   ```
 
-Ver el directorio `kubernetes/` para los manifiestos de Kubernetes.
+## 🔧 Development
 
-## 🔒 Seguridad
+### Local Development Setup
 
-### Medidas de Seguridad Implementadas
+1. **Clone and setup**:
+   ```bash
+   git clone <repository-url>
+   cd auth-service
+   bundle install
+   ```
 
-1. **Autenticación**
+2. **Set up databases**:
+   ```bash
+   # Start PostgreSQL and MySQL with Docker
+   docker-compose up -d db mysql
+   
+   # Run migrations
+   bundle exec rake db:migrate
+   ```
 
-   - Tokens JWT firmados
-   - Contraseñas hasheadas con bcrypt
-   - Tiempo de expiración de tokens
-   - Renovación de tokens
+3. **Start the development server**:
+   ```bash
+   bundle exec rackup
+   ```
 
-2. **Protección de Datos**
+### Code Quality
 
-   - Encriptación de datos sensibles
-   - Contraseñas nunca registradas
-   - Headers de seguridad HTTP
+- **RuboCop**: Code style enforcement
+  ```bash
+  bundle exec rubocop
+  ```
 
-3. **Seguridad en la API**
+- **RSpec**: Test execution
+  ```bash
+  bundle exec rspec
+  ```
 
-   - Validación de entrada
-   - Protección contra inyección SQL
-   - Rate limiting
-   - CORS configurado
+- **SimpleCov**: Coverage reports
+  ```bash
+  bundle exec rspec
+  open coverage/index.html
+  ```
 
-4. **Buenas Prácticas**
+## 📚 API Documentation
 
-   - Principio de mínimo privilegio
-   - Rotación de claves JWT
-   - Registro de eventos de seguridad
+### Authentication Endpoints
 
-### Recomendaciones de Producción
-
-1. **JWT**
-
-   - Usa claves asimétricas (RS256) en producción
-   - Implementa revocación de tokens
-   - Establece un tiempo de expiración razonable
-
-2. **Base de Datos**
-
-   - Usa conexiones SSL/TLS
-   - Limita los permisos del usuario de la base de datos
-   - Realiza copias de seguridad periódicas
-
-3. **Red**
-
-   - Usa HTTPS con certificados válidos
-   - Configura WAF (Web Application Firewall)
-   - Limita el acceso a los puertos de administración
-
-## 🤝 Contribución
-
-1. Haz un fork del proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/amazing-feature`)
-3. Haz commit de tus cambios (`git commit -m 'Add some amazing feature'`)
-4. Haz push a la rama (`git push origin feature/amazing-feature`)
-5. Abre un Pull Request
-
-## 📝 Licencia
-
-Distribuido bajo la licencia MIT. Ver `LICENSE` para más información.
-
-## 📞 Soporte
-
-Para soporte, por favor contacta al equipo de desarrollo o abre un issue en el repositorio.
-
-## 🙏 Agradecimientos
-
-- A todos los contribuyentes que han ayudado a mejorar este proyecto.
-- A la comunidad de código abierto por las increíbles herramientas utilizadas.
-
----
-
----
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Hecho%20con-%E2%9D%A4%EF%B8%8F-ff69b4" alt="Hecho con amor">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue" alt="Versión 1.0.0">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="Licencia MIT">
-</p>
-
-## 🚀 Inicio Rápido
-
-### 📚 API Documentation
-
-### Base URL
-
-All API endpoints are prefixed with `/api/v1`.
-
-### Authentication
-
-This API uses JWT (JSON Web Tokens) for authentication. Include the token in the `Authorization` header for authenticated requests:
-
-```http
-Authorization: Bearer your.jwt.token.here
-```
-
-### Endpoints
-
-#### User Registration
-
+#### POST /auth/register
 Register a new user account.
 
-```http
-POST /api/v1/register
-```
-
-**Request Body**
-
+**Request Body**:
 ```json
 {
   "email": "user@example.com",
-  "password": "securePassword123!",
-  "name": "John Doe"
+  "password": "securepassword",
+  "nombre": "John",
+  "apellido": "Doe",
+  "telefono": "+1234567890",
+  "rol": "cliente"
 }
 ```
 
-**Response (201 Created)**
-
+**Response**:
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "created_at": "2025-03-20T14:30:00Z",
-  "updated_at": "2025-03-20T14:30:00Z"
+  "message": "Usuario registrado exitosamente",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "nombre": "John",
+    "rol": "cliente"
+  }
 }
 ```
 
-**Error Responses**
+#### POST /auth/login
+Authenticate user and receive JWT tokens.
 
-- `400 Bad Request`: Invalid input data
-- `409 Conflict`: Email already registered
-
-#### User Login
-
-Authenticate a user and receive an access token.
-
-```http
-POST /api/v1/login
-```
-
-**Request Body**
-
+**Request Body**:
 ```json
 {
   "email": "user@example.com",
-  "password": "securePassword123!"
+  "password": "securepassword"
 }
 ```
 
-**Response (200 OK)**
-
+**Response**:
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "Bearer",
+  "access_token": "jwt_token_here",
+  "refresh_token": "refresh_token_here",
   "expires_in": 3600,
-  "user": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "user@example.com",
-    "name": "John Doe"
-  }
+  "token_type": "Bearer"
 }
 ```
 
-**Error Responses**
+#### POST /auth/refresh-token
+Refresh access token using refresh token.
 
-- `401 Unauthorized`: Invalid credentials
-- `404 Not Found`: User not found
-
-#### Token Verification
-
-Verify if a token is valid and get user information.
-
-```http
-GET /api/v1/verify
-```
-
-**Headers**
-
-```
-Authorization: Bearer your.jwt.token.here
-```
-
-**Response (200 OK)**
-
+**Request Body**:
 ```json
 {
-  "user": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "user@example.com",
-    "name": "John Doe"
-  },
-  "exp": 1732021800
+  "refresh_token": "refresh_token_here"
 }
 ```
 
-**Error Responses**
-
-- `401 Unauthorized`: Invalid or expired token
-
-### Error Responses
-
-All error responses follow this format:
-
+**Response**:
 ```json
 {
-  "error": {
-    "code": "error_code",
-    "message": "Human-readable error message",
-    "details": {
-      "field_name": ["validation error message"]
-    }
-  }
+  "access_token": "new_jwt_token_here",
+  "refresh_token": "new_refresh_token_here",
+  "expires_in": 3600,
+  "token_type": "Bearer"
 }
 ```
 
-### Rate Limiting
+#### DELETE /auth/logout
+Logout and invalidate tokens.
 
-- **Rate Limit**: 100 requests per minute per IP address
-
-- **Headers**:
-
-  - `X-RateLimit-Limit`: Request limit per time window
-  - `X-RateLimit-Remaining`: Remaining requests in current window
-  - `X-RateLimit-Reset`: Time when the rate limit resets (UTC epoch seconds)
-
-### API Versioning
-
-API versioning is handled through the URL path. The current version is `v1`.
-
-### Interactive Documentation
-
-For interactive API documentation and testing, visit the Swagger UI at:
-
+**Headers**:
 ```
-http://localhost:3000/api-docs
+Authorization: Bearer <access_token>
 ```
 
-This requires the development server to be running.
-
-### Ejecutar en modo desarrollo
-
-```bash
-# Instalar dependencias de frontend (si se usa)
-yarn install
-
-# Iniciar el servidor
-bundle exec rackup -p 4567
+**Response**:
+```json
+{
+  "message": "Sesión cerrada exitosamente"
+}
 ```
 
-## 🧪 Pruebas Rápidas con curl
+## 🔒 Security Features
 
-```bash
-# Registrar un nuevo usuario
-curl -X POST http://localhost:4567/api/v1/register \
-     -H 'Content-Type: application/json' \
-     -d '{"nombre":"Usuario Prueba","correo":"test@demo.com","password":"contraseña123","password_confirmation":"contraseña123"}'
+- **JWT Token Management**: Secure token generation and validation
+- **Password Hashing**: bcrypt for secure password storage
+- **Rate Limiting**: Protection against brute force attacks
+- **CORS Configuration**: Cross-origin request protection
+- **Input Validation**: Comprehensive data validation
+- **SQL Injection Protection**: Parameterized queries
+- **XSS Protection**: Output encoding and sanitization
 
-# Iniciar sesión
-curl -X POST http://localhost:4567/api/v1/login \
-     -H 'Content-Type: application/json' \
-     -d '{"correo":"test@demo.com","password":"contraseña123"}'
+## 📊 Monitoring & Health Checks
 
-# Obtener perfil (usar token obtenido en login)
-curl -X GET http://localhost:4567/api/v1/me \
-     -H 'Authorization: Bearer TU_TOKEN_JWT_AQUI'
+### Health Check Endpoint
+```
+GET /health
+```
 
----
+**Response**:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "version": "1.0.0",
+  "database": "connected",
+  "redis": "connected"
+}
+```
 
-## Authentication Flow (simplified)
-1. Client sends credentials to `/login`
-2. Service verifies credentials and generates a JWT signed with `JWT_SECRET`
-3. Client includes the JWT in the `Authorization: Bearer <token>` header for subsequent requests
-4. Other services (e.g., `profile-service`) validate the token without contacting the `auth-service`
+### Metrics Endpoints
+- `GET /metrics` - Application metrics
+- `GET /health/detailed` - Detailed health information
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
+
+### Testing Guidelines
+
+- Write tests for all new features
+- Maintain test coverage above 80%
+- Use descriptive test names
+- Follow the existing test patterns
+- Test both success and failure scenarios
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the [documentation](docs/)
+- Review the [API documentation](docs/api.md)

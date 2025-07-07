@@ -1,56 +1,269 @@
-services:
-  test:
-    build:
-      context: .
-      dockerfile: Dockerfile.test
-    environment:
-      - RACK_ENV=test
-      - RAILS_ENV=test
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/auth_db_test
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=auth_db_test
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - JWT_SECRET=test-secret-key
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - .:/app
-      - bundle_cache:/usr/local/bundle
-    working_dir: /app
+version: '3.8'
 
-  db:
+networks:
+  test_network:
+    driver: bridge
+
+services:
+  # Base de datos de prueba
+  test_db:
     image: postgres:15-alpine
+    container_name: test_db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=auth_db_test
     ports:
-      - "5435:5432"
+      - "5436:5432"
     volumes:
-      - postgres_data_test:/var/lib/postgresql/data
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db_test"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - test_network
 
-  redis:
+  # Redis para pruebas
+  test_redis:
     image: redis:7-alpine
-    command: redis-server --requirepass your_secure_password
+    container_name: test_redis
+    command: redis-server --requirepass test_password
     ports:
-      - "6379:6379"
+      - "6380:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "test_password", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - test_network
+
+  # Servicios de autenticación para pruebas
+  test_auth_register:
+    build:
+      context: .
+      dockerfile: auth-register-service/Dockerfile
+    container_name: test_auth_register
+    environment:
+      - RACK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - REDIS_URL=redis://:test_password@test_redis:6379/0
+      - JWT_SECRET=test-secret-key
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    ports:
+      - "3001:3000"
+
+  test_auth_login:
+    build:
+      context: .
+      dockerfile: auth-login-service/Dockerfile
+    container_name: test_auth_login
+    environment:
+      - RACK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - REDIS_URL=redis://:test_password@test_redis:6379/0
+      - JWT_SECRET=test-secret-key
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    ports:
+      - "3002:3000"
+
+  test_auth_profile:
+    build:
+      context: .
+      dockerfile: auth-profile-service/Dockerfile
+    container_name: test_auth_profile
+    environment:
+      - RACK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - REDIS_URL=redis://:test_password@test_redis:6379/0
+      - JWT_SECRET=test-secret-key
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    ports:
+      - "3003:3000"
+
+  test_auth_password:
+    build:
+      context: .
+      dockerfile: auth-password-service/Dockerfile
+    container_name: test_auth_password
+    environment:
+      - RACK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - REDIS_URL=redis://:test_password@test_redis:6379/0
+      - JWT_SECRET=test-secret-key
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    ports:
+      - "3004:3000"
+
+  test_auth_logout:
+    build:
+      context: .
+      dockerfile: auth-logout-service/Dockerfile
+    container_name: test_auth_logout
+    environment:
+      - RACK_ENV=test
+      - REDIS_URL=redis://:test_password@test_redis:6379/0
+      - JWT_SECRET=test-secret-key
+    depends_on:
+      test_redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    ports:
+      - "3005:3000"
+
+  test_auth_history:
+    build:
+      context: .
+      dockerfile: auth-history-service/Dockerfile
+    container_name: test_auth_history
+    environment:
+      - RACK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - REDIS_URL=redis://:test_password@test_redis:6379/0
+      - JWT_SECRET=test-secret-key
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    ports:
+      - "3006:3000"
+
+  # Servicio de perfil para pruebas
+  test_perfil_service:
+    build:
+      context: .
+      dockerfile: perfil-service/Dockerfile
+    container_name: test_perfil_service
+    environment:
+      - RACK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - JWT_SECRET=test-secret-key
+      - AUTH_SERVICE_URL=http://test_auth_login:3000
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_auth_login:
+        condition: service_started
+    networks:
+      - test_network
+    ports:
+      - "3007:4567"
+
+  # Servicio de historial para pruebas
+  test_historial_service:
+    build:
+      context: .
+      dockerfile: historial-service/Dockerfile
+    container_name: test_historial_service
+    environment:
+      - RACK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - JWT_SECRET=test-secret-key
+    depends_on:
+      test_db:
+        condition: service_healthy
+    networks:
+      - test_network
+    ports:
+      - "3008:4567"
+
+  # Servicio de pruebas principal
+  test_runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: test_runner
+    environment:
+      - RACK_ENV=test
+      - RAILS_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/auth_db_test
+      - REDIS_URL=redis://:test_password@test_redis:6379/0
+      - JWT_SECRET=test-secret-key
+      - AUTH_SERVICE_URL=http://test_auth_login:3000
+      - PROFILE_SERVICE_URL=http://test_perfil_service:4567
+      - HISTORY_SERVICE_URL=http://test_historial_service:4567
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_redis:
+        condition: service_healthy
+      test_auth_register:
+        condition: service_started
+      test_auth_login:
+        condition: service_started
+      test_auth_profile:
+        condition: service_started
+      test_auth_password:
+        condition: service_started
+      test_auth_logout:
+        condition: service_started
+      test_auth_history:
+        condition: service_started
+      test_perfil_service:
+        condition: service_started
+      test_historial_service:
+        condition: service_started
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    working_dir: /app
+    networks:
+      - test_network
+    command: ["bundle", "exec", "rspec", "--format", "documentation", "--color"]
+
+  # Swagger UI para documentación de API
+  swagger_ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger_ui
+    ports:
+      - "8080:8080"
+    environment:
+      - SWAGGER_JSON=/swagger/swagger.json
+    volumes:
+      - ./swagger:/swagger
+    networks:
+      - test_network
+    depends_on:
+      - test_auth_register
+      - test_auth_login
+      - test_auth_profile
+      - test_auth_password
+      - test_auth_logout
+      - test_auth_history
+      - test_perfil_service
+      - test_historial_service
 
 volumes:
-  postgres_data_test:
+  postgres_test_data:
   bundle_cache:

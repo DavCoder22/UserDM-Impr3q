@@ -1,0 +1,868 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sistema de Autenticación y Gestión de Usuarios - API",
+    "description": "API completa para el sistema de autenticación, gestión de perfiles e historial de usuarios",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Equipo de Desarrollo",
+      "email": "desarrollo@impr3q.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Servicio de Registro"
+    },
+    {
+      "url": "http://localhost:3002",
+      "description": "Servicio de Login"
+    },
+    {
+      "url": "http://localhost:3003",
+      "description": "Servicio de Perfil"
+    },
+    {
+      "url": "http://localhost:3004",
+      "description": "Servicio de Contraseñas"
+    },
+    {
+      "url": "http://localhost:3005",
+      "description": "Servicio de Logout"
+    },
+    {
+      "url": "http://localhost:3006",
+      "description": "Servicio de Historial"
+    },
+    {
+      "url": "http://localhost:3007",
+      "description": "Servicio de Perfil Completo"
+    },
+    {
+      "url": "http://localhost:3008",
+      "description": "Servicio de Historial Completo"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID único del usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "description": "Nombre completo del usuario"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Correo electrónico del usuario"
+          },
+          "rol": {
+            "type": "string",
+            "enum": ["cliente", "impresor", "admin"],
+            "description": "Rol del usuario en el sistema"
+          },
+          "telefono": {
+            "type": "string",
+            "description": "Número de teléfono del usuario"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creación del usuario"
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID único del perfil"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "ID del usuario asociado"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "description": "Nombre completo del usuario"
+          },
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "description": "Correo electrónico"
+          },
+          "telefono": {
+            "type": "string",
+            "description": "Número de teléfono"
+          },
+          "direccion": {
+            "type": "string",
+            "description": "Dirección del usuario"
+          },
+          "fecha_nacimiento": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha de nacimiento"
+          },
+          "genero": {
+            "type": "string",
+            "enum": ["masculino", "femenino", "otro"],
+            "description": "Género del usuario"
+          },
+          "avatar_url": {
+            "type": "string",
+            "description": "URL del avatar del usuario"
+          }
+        }
+      },
+      "History": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID único del registro de historial"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "ID del usuario"
+          },
+          "accion": {
+            "type": "string",
+            "description": "Acción realizada"
+          },
+          "detalles": {
+            "type": "object",
+            "description": "Detalles adicionales de la acción"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha y hora de la acción"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Mensaje de error"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Detalles adicionales del error"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Verificar estado del servicio",
+        "description": "Endpoint para verificar que el servicio esté funcionando correctamente",
+        "responses": {
+          "200": {
+            "description": "Servicio funcionando correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "service": {
+                      "type": "string",
+                      "example": "auth-register-service"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Registrar nuevo usuario",
+        "description": "Crea una nueva cuenta de usuario en el sistema",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "email", "password", "rol", "telefono"],
+                "properties": {
+                  "nombre": {
+                    "type": "string",
+                    "description": "Nombre completo del usuario"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Correo electrónico único"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "description": "Contraseña del usuario"
+                  },
+                  "rol": {
+                    "type": "string",
+                    "enum": ["cliente", "impresor"],
+                    "description": "Rol del usuario"
+                  },
+                  "telefono": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User registered successfully"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "token": {
+                      "type": "string",
+                      "description": "Token JWT para autenticación"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El correo electrónico ya está en uso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Iniciar sesión",
+        "description": "Autentica un usuario y devuelve un token JWT",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Correo electrónico del usuario"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Contraseña del usuario"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "Token JWT para autenticación"
+                    },
+                    "expires_in": {
+                      "type": "integer",
+                      "description": "Tiempo de expiración en segundos"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logout": {
+      "delete": {
+        "tags": ["Autenticación"],
+        "summary": "Cerrar sesión",
+        "description": "Invalida el token JWT del usuario",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sesión cerrada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Sesión cerrada exitosamente"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": ["Usuario"],
+        "summary": "Obtener información del usuario actual",
+        "description": "Devuelve la información del usuario autenticado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información del usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/change-password": {
+      "put": {
+        "tags": ["Usuario"],
+        "summary": "Cambiar contraseña",
+        "description": "Permite al usuario cambiar su contraseña",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["current_password", "new_password"],
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "description": "Contraseña actual"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "description": "Nueva contraseña"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contraseña cambiada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Contraseña actualizada exitosamente"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contraseña actual incorrecta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "tags": ["Perfil"],
+        "summary": "Obtener perfil del usuario actual",
+        "description": "Devuelve el perfil completo del usuario autenticado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil del usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Perfil no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Perfil"],
+        "summary": "Crear o actualizar perfil",
+        "description": "Crea o actualiza el perfil del usuario autenticado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre_completo", "correo"],
+                "properties": {
+                  "nombre_completo": {
+                    "type": "string",
+                    "description": "Nombre completo del usuario"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Correo electrónico"
+                  },
+                  "telefono": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "direccion": {
+                    "type": "string",
+                    "description": "Dirección del usuario"
+                  },
+                  "fecha_nacimiento": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Fecha de nacimiento"
+                  },
+                  "genero": {
+                    "type": "string",
+                    "enum": ["masculino", "femenino", "otro"],
+                    "description": "Género del usuario"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Perfil creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de entrada inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error de validación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/avatar": {
+      "put": {
+        "tags": ["Perfil"],
+        "summary": "Actualizar avatar del perfil",
+        "description": "Actualiza la URL del avatar del usuario",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["avatar_url"],
+                "properties": {
+                  "avatar_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL del avatar"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar actualizado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "URL de avatar requerida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profiles/{id}": {
+      "get": {
+        "tags": ["Perfil"],
+        "summary": "Obtener perfil por ID",
+        "description": "Obtiene el perfil de un usuario específico (solo administradores)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID del usuario"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil del usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acceso denegado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Perfil no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history": {
+      "get": {
+        "tags": ["Historial"],
+        "summary": "Obtener historial del usuario",
+        "description": "Devuelve el historial de actividades del usuario autenticado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            },
+            "description": "Número máximo de registros a devolver"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Número de registros a omitir"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historial del usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/History"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total de registros"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history/{id}": {
+      "get": {
+        "tags": ["Historial"],
+        "summary": "Obtener registro específico del historial",
+        "description": "Devuelve un registro específico del historial",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID del registro de historial"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registro del historial",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/History"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+} 

@@ -6,7 +6,7 @@ FactoryBot.define do
     nombre { Faker::Name.first_name }
     apellido { Faker::Name.last_name }
     telefono { Faker::PhoneNumber.phone_number }
-    rol { %w[cliente impresor admin].sample }
+    rol { 'cliente' }
     email_verificado { true }
     cuenta_activa { true }
     fecha_registro { Time.now.utc }
@@ -30,6 +30,21 @@ FactoryBot.define do
     trait :unverified do
       email_verificado { false }
     end
+    
+    # Método para crear usuario en la base de datos
+    after(:build) do |user, evaluator|
+      # Asegurar que el password_hash esté configurado
+      if evaluator.password && !evaluator.password_hash
+        user.password_hash = BCrypt::Password.create(evaluator.password)
+      end
+    end
+    
+    # Método para guardar en base de datos si está disponible
+    after(:create) do |user, evaluator|
+      if $db_connection
+        user.save($db_connection)
+      end
+    end
   end
   
   factory :session do
@@ -51,6 +66,13 @@ FactoryBot.define do
     trait :revoked do
       revoked_at { 1.hour.ago.utc }
     end
+    
+    # Método para guardar en base de datos si está disponible
+    after(:create) do |session, evaluator|
+      if $db_connection
+        session.save($db_connection)
+      end
+    end
   end
   
   factory :login_history do
@@ -60,5 +82,23 @@ FactoryBot.define do
     success { true }
     reason { nil }
     created_at { Time.now.utc }
+    
+    # Método para guardar en base de datos si está disponible
+    after(:create) do |history, evaluator|
+      if $db_connection
+        # Insertar directamente en la base de datos
+        $db_connection.exec_params(
+          'INSERT INTO login_history (user_id, ip_address, user_agent, success, reason, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
+          [
+            history.user_id,
+            history.ip_address,
+            history.user_agent,
+            history.success,
+            history.reason,
+            history.created_at
+          ]
+        )
+      end
+    end
   end
 end

@@ -39,6 +39,44 @@ variable "service_ports" {
   type        = map(number)
   default = {
     auth_service = 3000
-    # Add other services and their ports here
+    profile_service = 4567
+    history_service = 4567
   }
+}
+
+variable "db_username" {
+  description = "Database username"
+  type        = string
+  default     = "postgres"
+}
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "JWT secret key"
+  type        = string
+  sensitive   = true
+}
+
+variable "redis_password" {
+  description = "Redis password"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "domain_name" {
+  description = "Domain name for the application"
+  type        = string
+  default     = ""
+}
+
+variable "certificate_arn" {
+  description = "ARN of SSL certificate"
+  type        = string
+  default     = ""
 }
